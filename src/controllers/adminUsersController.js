@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { query } from "../config/db.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { httpError } from "../utils/httpError.js";
+import { logActivity, buildDescription } from "../utils/activityLogger.js";
 
 const USER_SELECT = `
   SELECT
@@ -81,6 +82,14 @@ export const createAdminUser = asyncHandler(async (req, res) => {
   );
 
   res.status(201).json({ data: { id: result.insertId } });
+  logActivity({
+    user: req.admin,
+    action: "create",
+    resource: "admin-users",
+    resourceId: result.insertId,
+    description: buildDescription("create", "admin-users", name),
+    metadata: { email, role_id: roleId },
+  });
 });
 
 export const updateAdminUser = asyncHandler(async (req, res) => {
@@ -139,6 +148,14 @@ export const updateAdminUser = asyncHandler(async (req, res) => {
   );
 
   res.json({ data: { id: userId } });
+  logActivity({
+    user: req.admin,
+    action: "update",
+    resource: "admin-users",
+    resourceId: userId,
+    description: buildDescription("update", "admin-users", name),
+    metadata: { email, role_id: roleId, passwordChanged: !!req.body.password },
+  });
 });
 
 export const deleteAdminUser = asyncHandler(async (req, res) => {
@@ -155,4 +172,11 @@ export const deleteAdminUser = asyncHandler(async (req, res) => {
   }
 
   res.status(204).send();
+  logActivity({
+    user: req.admin,
+    action: "delete",
+    resource: "admin-users",
+    resourceId: userId,
+    description: buildDescription("delete", "admin-users"),
+  });
 });

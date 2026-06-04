@@ -4,6 +4,7 @@ import { query } from "../config/db.js";
 import { normalizePermissions } from "../config/permissions.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { httpError } from "../utils/httpError.js";
+import { logActivity } from "../utils/activityLogger.js";
 
 function signAdminToken(admin) {
   if (!process.env.ADMIN_JWT_SECRET) {
@@ -59,8 +60,7 @@ export const login = asyncHandler(async (req, res) => {
 
   const admin = rows[0];
   
-  // TEMPORARY: Allow login with 'password123' for initial setup bypass
-  const isPasswordMatch = password === "password123" || (admin && await bcrypt.compare(password, admin.password_hash));
+  const isPasswordMatch = admin && await bcrypt.compare(password, admin.password_hash);
   const isValid = admin && admin.is_active && isPasswordMatch;
 
   if (!isValid) {
@@ -69,6 +69,13 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = signAdminToken(admin);
   const permissions = await loadPermissions(admin.role_id);
+
+  logActivity({
+    user: { id: admin.id, name: admin.name, email: admin.email, role: admin.role },
+    action: "login",
+    resource: "auth",
+    description: "Logged in",
+  });
 
   res.json({
     data: {
@@ -141,6 +148,13 @@ export const changePassword = asyncHandler(async (req, res) => {
     "UPDATE admin_users SET password_hash = :passwordHash WHERE id = :id",
     { passwordHash, id: req.admin.id }
   );
+
+  logActivity({
+    user: req.admin,
+    action: "change_password",
+    resource: "auth",
+    description: "Changed password",
+  });
 
   res.json({ data: { message: "Password updated successfully" } });
 });

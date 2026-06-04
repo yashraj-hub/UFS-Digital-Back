@@ -80,7 +80,10 @@ export const getBlogBySlug = asyncHandler(async (req, res) => {
     throw httpError(404, "Blog not found");
   }
 
-  res.json({ data: rows[0] });
+  const blog = rows[0];
+  blog.cover_image_url = toAbsoluteAssetUrl(req, blog.cover_image_url);
+
+  res.json({ data: blog });
 });
 
 export const listTeamMembers = asyncHandler(async (req, res) => {
@@ -161,6 +164,104 @@ export const createContactSubmission = asyncHandler(async (req, res) => {
       VALUES (:name, :email, :phone, :subject, :message)
     `,
     data
+  );
+
+  res.status(201).json({ data: { id: result.insertId } });
+});
+
+export const listJobs = asyncHandler(async (req, res) => {
+  const rows = await query(`
+    SELECT id, title, department, location, experience_required, image_url, created_at
+    FROM jobs
+    WHERE status = 'active'
+    ORDER BY created_at DESC
+  `);
+  res.json({
+    data: rows.map((row) => ({
+      ...row,
+      image_url: toAbsoluteAssetUrl(req, row.image_url),
+    })),
+  });
+});
+
+export const getJobById = asyncHandler(async (req, res) => {
+  const rows = await query(
+    `
+      SELECT id, title, department, description, location, experience_required, image_url, created_at
+      FROM jobs
+      WHERE id = :id AND status = 'active'
+      LIMIT 1
+    `,
+    { id: req.params.id }
+  );
+
+  if (!rows.length) {
+    throw httpError(404, "Job not found");
+  }
+
+  const job = rows[0];
+  job.image_url = toAbsoluteAssetUrl(req, job.image_url);
+
+  res.json({ data: job });
+});
+
+export const createJobApplication = asyncHandler(async (req, res) => {
+  const {
+    job_id,
+    full_name,
+    email,
+    phone,
+    current_location,
+    experience_years,
+    current_ctc,
+    expected_ctc,
+    notice_period,
+    linkedin_url,
+    portfolio_url,
+    cover_letter,
+  } = req.body;
+
+  const resumeFile = req.file;
+
+  if (!job_id || !full_name || !email || !phone || !resumeFile) {
+    throw httpError(400, "Required fields are missing");
+  }
+
+  // Check if the user has already applied for this job with the same email
+  const existingApps = await query(
+    `SELECT id FROM job_applications WHERE job_id = :job_id AND email = :email LIMIT 1`,
+    { job_id, email: email.trim().toLowerCase() }
+  );
+
+  if (existingApps.length > 0) {
+    throw httpError(400, "You have already applied for this position with this email address.");
+  }
+
+  // Store the relative path to the resume
+  const resume_url = `/assets/uploads/resumes/${resumeFile.filename}`;
+
+  const result = await query(
+    `
+      INSERT INTO job_applications 
+      (job_id, full_name, email, phone, current_location, experience_years, current_ctc, expected_ctc, notice_period, linkedin_url, portfolio_url, resume_url, cover_letter)
+      VALUES 
+      (:job_id, :full_name, :email, :phone, :current_location, :experience_years, :current_ctc, :expected_ctc, :notice_period, :linkedin_url, :portfolio_url, :resume_url, :cover_letter)
+    `,
+    {
+      job_id,
+      full_name,
+      email,
+      phone,
+      current_location,
+      experience_years: experience_years || null,
+      current_ctc: current_ctc || null,
+      expected_ctc: expected_ctc || null,
+      notice_period: notice_period || null,
+      linkedin_url: linkedin_url || null,
+      portfolio_url: portfolio_url || null,
+      resume_url,
+      cover_letter: cover_letter || null,
+    }
   );
 
   res.status(201).json({ data: { id: result.insertId } });

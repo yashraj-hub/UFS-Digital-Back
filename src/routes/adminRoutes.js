@@ -16,10 +16,12 @@ import {
 import {
   createResource,
   deleteResource,
+  deleteMultipleResources,
   getResourceById,
   listResources,
   updateResource,
 } from "../controllers/adminContentController.js";
+import { getActivityLogs } from "../controllers/adminActivityController.js";
 import {
   requireAdmin,
   requireAnyPermission,
@@ -55,10 +57,13 @@ router.post("/users", requireAdmin, requirePermission("admin-users", "create"), 
 router.patch("/users/:id", requireAdmin, requirePermission("admin-users", "edit"), updateAdminUser);
 router.delete("/users/:id", requireAdmin, requirePermission("admin-users", "delete"), deleteAdminUser);
 
+router.get("/activity-logs", requireAdmin, getActivityLogs);
+
 router.get("/content/:resource", requireAdmin, requireResourcePermission("view"), listResources);
 router.post("/content/:resource", requireAdmin, requireResourcePermission("create"), createResource);
 router.get("/content/:resource/:id", requireAdmin, requireResourcePermission("view"), getResourceById);
 router.patch("/content/:resource/:id", requireAdmin, requireResourcePermission("edit"), updateResource);
 router.delete("/content/:resource/:id", requireAdmin, requireResourcePermission("delete"), deleteResource);
+router.post("/content/:resource/bulk-delete", requireAdmin, requireResourcePermission("delete"), deleteMultipleResources);
 
 export default router;
