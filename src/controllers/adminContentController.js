@@ -312,8 +312,7 @@ export const uploadTeamPhoto = asyncHandler(async (req, res) => {
     throw httpError(400, "No photo file provided");
   }
 
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
-  const photoUrl = `${baseUrl}/uploads/photos/${req.file.filename}`;
+  const photoUrl = `/uploads/photos/${req.file.filename}`;
 
   res.json({ data: { photo_url: photoUrl } });
 });
