@@ -1,4 +1,5 @@
 import { query } from "../config/db.js";
+import pool from "../config/db.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { httpError } from "../utils/httpError.js";
 import { logActivity, buildDescription } from "../utils/activityLogger.js";
@@ -286,15 +287,8 @@ export const deleteMultipleResources = asyncHandler(async (req, res) => {
     throw httpError(400, "Invalid or empty IDs list");
   }
 
-  // Use a string of placeholders (?, ?, ?) for safe query
   const placeholders = ids.map(() => "?").join(", ");
-  
-  // Note: our query helper uses named parameters (:name), 
-  // but for IN clauses with variable length, we might need a direct mysql2 call 
-  // or handle it via named params in a loop if the helper doesn't support arrays.
-  // Checking db.js implementation...
-  
-  await query(`DELETE FROM ${resource.table} WHERE id IN (${ids.join(',')})`)
+  const [rows] = await pool.execute(`DELETE FROM ${resource.table} WHERE id IN (${placeholders})`, ids);
 
   logActivity({
     user: req.admin,
