@@ -306,3 +306,14 @@ export const deleteMultipleResources = asyncHandler(async (req, res) => {
 
   res.status(204).send();
 });
+
+export const uploadTeamPhoto = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw httpError(400, "No photo file provided");
+  }
+
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  const photoUrl = `${baseUrl}/uploads/photos/${req.file.filename}`;
+
+  res.json({ data: { photo_url: photoUrl } });
+});

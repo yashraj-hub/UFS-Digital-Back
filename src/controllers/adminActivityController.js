@@ -53,8 +53,8 @@ export const getActivityLogs = asyncHandler(async (req, res) => {
     `SELECT id, user_id, user_name, user_role, action, resource, description, created_at
      FROM activity_logs ${where}
      ORDER BY created_at DESC
-     LIMIT :limit OFFSET :offset`,
-    { ...params, limit, offset }
+     LIMIT ${limit} OFFSET ${offset}`,
+    params
   );
 
   res.json({ data: { logs: rows, page, limit } });

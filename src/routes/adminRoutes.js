@@ -20,6 +20,7 @@ import {
   getResourceById,
   listResources,
   updateResource,
+  uploadTeamPhoto,
 } from "../controllers/adminContentController.js";
 import { getActivityLogs } from "../controllers/adminActivityController.js";
 import {
@@ -28,6 +29,7 @@ import {
   requirePermission,
   requireResourcePermission,
 } from "../middleware/auth.js";
+import { uploadPhoto } from "../middleware/upload.js";
 
 const router = Router();
 
@@ -58,6 +60,8 @@ router.patch("/users/:id", requireAdmin, requirePermission("admin-users", "edit"
 router.delete("/users/:id", requireAdmin, requirePermission("admin-users", "delete"), deleteAdminUser);
 
 router.get("/activity-logs", requireAdmin, getActivityLogs);
+
+router.post("/content/team-members/upload-photo", requireAdmin, requireResourcePermission("edit"), uploadPhoto.single("photo"), uploadTeamPhoto);
 
 router.get("/content/:resource", requireAdmin, requireResourcePermission("view"), listResources);
 router.post("/content/:resource", requireAdmin, requireResourcePermission("create"), createResource);
