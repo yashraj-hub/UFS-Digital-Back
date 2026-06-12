@@ -26,7 +26,8 @@ function toAbsoluteAssetUrl(req, value) {
     return value;
   }
 
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
+  const protocol = req.get("x-forwarded-proto") || req.protocol;
+  const baseUrl = `${protocol}://${req.get("host")}`;
   return value.startsWith("/") ? `${baseUrl}${value}` : value;
 }
 
